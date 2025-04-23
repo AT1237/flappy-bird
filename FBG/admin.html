@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel - Flappy Bird</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #003A3A;
+      color: #FFFF00;
+      text-align: center;
+      margin: 20px;
+    }
+    table {
+      width: 80%;
+      margin: 20px auto;
+      border-collapse: collapse;
+      background-color: #FFFFFF;
+      color: #000000;
+    }
+    th, td {
+      border: 1px solid #00FFFF;
+      padding: 10px;
+      text-align: left;
+    }
+    th {
+      background-color: #A100A1;
+      color: #FFFF00;
+    }
+    h1, h2 {
+      text-shadow: 1px 1px 0 #A100A1;
+    }
+    button {
+      background-color: #FFFFFF;
+      border: 2px solid #00FFFF;
+      color: #A100A1;
+      font-family: Arial, sans-serif;
+      font-size: 16px;
+      padding: 10px 20px;
+      cursor: pointer;
+      margin: 20px;
+      text-shadow: 1px 1px 0 #FFFF00;
+    }
+    button:hover {
+      background-color: #00FFFF;
+      color: #003A3A;
+    }
+    #withdrawalsContainer {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <h1>Admin Panel</h1>
+  <div id="usersContainer">
+    <h2>Users</h2>
+    <table id="userTable">
+      <thead>
+        <tr>
+          <th>Username</th>
+          <th>Password</th>
+          <th>High Score</th>
+          <th>Coins</th>
+          <th>Hearts</th>
+          <th>Current Skin</th>
+        </tr>
+      </thead>
+      <tbody id="userTableBody"></tbody>
+    </table>
+    <button id="withdrawRequestsBtn">Withdraw Requests</button>
+  </div>
+  <div id="withdrawalsContainer">
+    <h2>Withdraw Requests</h2>
+    <table id="withdrawalTable">
+      <thead>
+        <tr>
+          <th>Username</th>
+          <th>Coins</th>
+          <th>Bank Account</th>
+          <th>IFSC Code</th>
+          <th>Timestamp</th>
+        </tr>
+      </thead>
+      <tbody id="withdrawalTableBody"></tbody>
+    </table>
+    <button id="backToUsersBtn">Back to Users</button>
+  </div>
+  <script>
+    let pageState = 'users';
+
+    function loadUserData() {
+      const users = JSON.parse(localStorage.getItem('flappyUsers') || '{}');
+      const userTableBody = document.getElementById('userTableBody');
+      userTableBody.innerHTML = '';
+      Object.keys(users).forEach(username => {
+        const user = users[username];
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${username}</td>
+          <td>${user.password}</td>
+          <td>${user.highScore || 0}</td>
+          <td>${user.coins || 0}</td>
+          <td>${user.hearts || 3}</td>
+          <td>${user.currentSkin || 'yellow'}</td>
+        `;
+        userTableBody.appendChild(row);
+      });
+    }
+
+    function loadWithdrawalData() {
+      const withdrawals = JSON.parse(localStorage.getItem('flappyWithdrawals') || '[]');
+      const withdrawalTableBody = document.getElementById('withdrawalTableBody');
+      withdrawalTableBody.innerHTML = '';
+      withdrawals.forEach(w => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${w.username}</td>
+          <td>${w.coins}</td>
+          <td>${w.bank}</td>
+          <td>${w.ifsc}</td>
+          <td>${w.timestamp}</td>
+        `;
+        withdrawalTableBody.appendChild(row);
+      });
+    }
+
+    function renderPage() {
+      const usersContainer = document.getElementById('usersContainer');
+      const withdrawalsContainer = document.getElementById('withdrawalsContainer');
+      if (pageState === 'users') {
+        usersContainer.style.display = 'block';
+        withdrawalsContainer.style.display = 'none';
+        loadUserData();
+      } else if (pageState === 'withdrawals') {
+        usersContainer.style.display = 'none';
+        withdrawalsContainer.style.display = 'block';
+        loadWithdrawalData();
+      }
+      console.log(`Rendering pageState: ${pageState}`);
+    }
+
+    document.getElementById('withdrawRequestsBtn').addEventListener('click', () => {
+      pageState = 'withdrawals';
+      renderPage();
+    });
+
+    document.getElementById('backToUsersBtn').addEventListener('click', () => {
+      pageState = 'users';
+      renderPage();
+    });
+
+    window.onload = () => {
+      renderPage();
+    };
+  </script>
+</body>
+</html>
