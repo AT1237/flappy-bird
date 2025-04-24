@@ -168,8 +168,8 @@
       height: 40,
       radius: 20,
       velocity: 0,
-      gravity: 0.4,
-      jump: -10
+      gravity: 25, // Adjusted for delta time (previously 0.4 * 60 ≈ 24)
+      jump: -450 // Adjusted for delta time (previously -10 * 60 ≈ -600, now tuned for responsiveness)
     };
 
     const pipes = [];
@@ -197,6 +197,7 @@
     let deathEffectParticles = [];
     let deathX = 0;
     let deathY = 0;
+    let lastTime = 0; // For delta time calculation
 
     // User account system
     let users = JSON.parse(localStorage.getItem('flappyUsers') || '{}');
@@ -231,8 +232,8 @@
     const minPipeGap = 150;
     const initialPipeSpeed = 1.5;
     const maxPipeSpeed = 4;
-    const initialGravity = 0.4;
-    const maxGravity = 0.7;
+    const initialGravity = 25; // Adjusted for delta time
+    const maxGravity = 40; // Adjusted for delta time (previously 0.7 * 60 ≈ 42)
 
     // Button definitions
     const jumpButton = { x: canvas.width / 2 - 50, y: canvas.height - 80, width: 100, height: 50 };
@@ -241,6 +242,9 @@
     const plusButton = { x: canvas.width / 2 - 25, y: 350, width: 50, height: 50, text: '+' };
     const withdrawButton = { x: canvas.width / 2 - 25, y: 410, width: 50, height: 50, text: 'W' };
     let watchAdPopup = { timer: 0, adTimer: 0 };
+
+    // Admin settings
+    const ADMIN_USERNAME = 'admin';
 
     function positionAuthInputs() {
       const rect = canvas.getBoundingClientRect();
@@ -376,7 +380,7 @@
 
     function updateMusic() {
       try {
-        const musicStates = ['menu', 'playing', 'countdown', 'inventory', 'skins', 'profile', 'settings'];
+        const musicStates = ['menu', 'playing', 'countdown', 'inventory', 'skins', 'profile', 'settings', 'admin'];
         if (soundEnabled && musicStates.includes(gameState)) {
           if (backgroundMusic.paused) {
             backgroundMusic.play().catch(e => console.error('Error playing music:', e));
@@ -408,13 +412,13 @@
       return particles;
     }
 
-    function updateDeathEffect() {
+    function updateDeathEffect(deltaTime) {
       if (gameState === 'deathEffect') {
-        deathEffectTimer--;
+        deathEffectTimer -= 60 * deltaTime;
         deathEffectParticles.forEach(particle => {
-          particle.x += particle.vx;
-          particle.y += particle.vy;
-          particle.alpha -= 1 / 60;
+          particle.x += particle.vx * deltaTime * 60;
+          particle.y += particle.vy * deltaTime * 60;
+          particle.alpha -= (1 / 60) * deltaTime * 60;
         });
         deathEffectParticles = deathEffectParticles.filter(p => p.alpha > 0);
         if (deathEffectTimer <= 0) {
@@ -512,13 +516,14 @@
       else if (gameState === 'register') handleRegisterClick(x, y);
       else if (gameState === 'withdraw') handleWithdrawClick(x, y);
       else if (gameState === 'menu') handleMenuClick(x, y);
-      else if (['profile', 'inventory', 'skins', 'settings'].includes(gameState)) handleSubPageClick(x, y);
+      else if (['profile', 'inventory', 'skins', 'settings', 'admin'].includes(gameState)) handleSubPageClick(x, y);
       else if (gameState === 'playing' && !gameOver) {
         if (x >= jumpButton.x && x <= jumpButton.x + jumpButton.width && y >= jumpButton.y && y <= jumpButton.y + jumpButton.height) {
           bird.velocity = bird.jump;
           console.log('Jump button clicked');
         } else {
           bird.velocity = bird.jump;
+          console.log('Screen tapped to jump');
         }
       } else if (gameState === 'gameover') {
         if (x >= restartButton.x && x <= restartButton.x + restartButton.width && y >= restartButton.y && y <= restartButton.y + restartButton.height) {
@@ -1049,6 +1054,9 @@
         { label: 'Skins', state: 'skins', y: 410 },
         { label: 'Settings', state: 'settings', y: 480 }
       ];
+      if (currentUser === ADMIN_USERNAME) {
+        buttons.push({ label: 'Admin', state: 'admin', y: 200 + buttons.length * 70 });
+      }
       const btnX = canvas.width / 2 - 50;
       const btnWidth = 100;
       const btnHeight = 50;
@@ -1142,6 +1150,7 @@
           resetUserSession();
         }
       }
+      // Admin page has no additional clickable elements beyond "Back"
     }
 
     function updateDifficulty() {
@@ -1207,10 +1216,10 @@
       });
     }
 
-    function updateBird() {
+    function updateBird(deltaTime) {
       if (gameState === 'playing') {
-        bird.velocity += bird.gravity;
-        bird.y += bird.velocity;
+        bird.velocity += bird.gravity * deltaTime * 60;
+        bird.y += bird.velocity * deltaTime * 60;
         if (bird.y + bird.radius > canvas.height - 50 || bird.y - bird.radius < 0) {
           deathX = bird.x;
           deathY = bird.y;
@@ -1226,11 +1235,11 @@
       }
     }
 
-    function updatePipes() {
+    function updatePipes(deltaTime) {
       if (gameState === 'playing') {
         if (frameCount % 90 === 0) createPipe();
         pipes.forEach(pipe => {
-          pipe.x -= pipeSpeed;
+          pipe.x -= pipeSpeed * deltaTime * 60;
           if (
             bird.x + bird.radius > pipe.x &&
             bird.x - bird.radius < pipe.x + pipeWidth &&
@@ -1305,6 +1314,9 @@
         buttons.forEach((label, index) => {
           drawNeonText(label, canvas.width / 2, 200 + index * 70 + 35, 16);
         });
+        if (currentUser === ADMIN_USERNAME) {
+          drawNeonText('Admin', canvas.width / 2, 200 + buttons.length * 70 + 35, 16);
+        }
         drawRedHeartText('♥', `${hearts}`, canvas.width - 20, 140, 24, 16, 10);
         if (hearts === 0) {
           const elapsedTime = Date.now() - lastHeartRestoration;
@@ -1380,6 +1392,27 @@
       }
     }
 
+    function drawAdmin() {
+      if (gameState === 'admin') {
+        drawGridBackground();
+        drawNeonText('Admin Panel', canvas.width / 2, 100, 32);
+        drawNeonText('Withdrawals', canvas.width / 2, 150, 16);
+
+        let withdrawals = JSON.parse(localStorage.getItem('flappyWithdrawals') || '[]');
+        if (withdrawals.length === 0) {
+          drawNeonText('No withdrawals yet', canvas.width / 2, 200, 12);
+        } else {
+          withdrawals.slice(0, 5).forEach((withdrawal, index) => {
+            const y = 200 + index * 40;
+            const text = `${withdrawal.username}: ${withdrawal.coins} coins, Bank: ${withdrawal.bank}, IFSC: ${withdrawal.ifsc}`;
+            drawNeonText(text, canvas.width / 2, y, 10);
+          });
+        }
+
+        drawNeonText('Back', canvas.width / 2, canvas.height - 65, 12);
+      }
+    }
+
     function resetGame() {
       bird.y = canvas.height / 2;
       bird.velocity = 0;
@@ -1399,7 +1432,11 @@
       console.log('Game reset');
     }
 
-    function gameLoop() {
+    function gameLoop(timestamp) {
+      if (!lastTime) lastTime = timestamp;
+      const deltaTime = (timestamp - lastTime) / 1000;
+      lastTime = timestamp;
+
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       updateMusic();
       if (gameState === 'login') {
@@ -1409,7 +1446,6 @@
       } else if (gameState === 'withdraw') {
         drawWithdraw();
       } else {
-        // Hide all auth inputs when not in login, register, or withdraw state
         usernameInput.style.display = 'none';
         passwordInput.style.display = 'none';
         registerUsernameInput.style.display = 'none';
@@ -1428,6 +1464,8 @@
           drawSkins();
         } else if (gameState === 'settings') {
           drawSettings();
+        } else if (gameState === 'admin') {
+          drawAdmin();
         } else if (gameState === 'countdown') {
           drawBackground();
           drawBird();
@@ -1442,8 +1480,8 @@
           }
         } else if (gameState === 'playing') {
           drawBackground();
-          updateBird();
-          updatePipes();
+          updateBird(deltaTime);
+          updatePipes(deltaTime);
           drawPipes();
           drawBird();
           drawJumpButton();
@@ -1453,7 +1491,7 @@
         } else if (gameState === 'deathEffect') {
           drawBackground();
           drawPipes();
-          updateDeathEffect();
+          updateDeathEffect(deltaTime);
           drawDeathEffect();
           drawJumpButton();
           drawScore();
