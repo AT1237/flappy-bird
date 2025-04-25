@@ -22,12 +22,6 @@
       overflow: hidden;
       background-color: #003A3A;
     }
-    #instructions {
-      margin-top: 10px;
-      font-size: 16px;
-      color: #FFFF00;
-      text-shadow: 1px 1px 0 #A100A1;
-    }
     #authInputs {
       position: absolute;
       top: 0;
@@ -41,7 +35,6 @@
       position: absolute;
       font-family: 'Press Start 2P', cursive;
       font-size: 12px;
-      color: #FFFF00;
       background: #FFFFFF;
       border: none;
       padding: 0;
@@ -52,6 +45,12 @@
       outline: none;
       caret-color: #FF69B4;
       text-align: center;
+    }
+    #usernameInput, #passwordInput, #registerUsernameInput, #registerPasswordInput {
+      color: #000000; /* Black text for entered username and password */
+    }
+    #withdrawCoinsInput, #withdrawBankInput, #withdrawIFSCInput {
+      color: #FFFF00; /* Keep yellow text for withdraw inputs */
     }
     #withdrawCoinsInput {
       font-size: 10px; /* Smaller font for 'Coins (Min 100)' placeholder */
@@ -93,7 +92,6 @@
     <source src="coin.mp3" type="audio/mpeg">
     Your browser does not support the audio element.
   </audio>
-  <div id="instructions">Main Menu: Tap options | Game: Tap Jump arrow or Screen | Game Over: Tap Restart or Home | Desktop: Space to Jump, Enter to Restart</div>
   <script>
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
@@ -235,7 +233,7 @@
     const maxGravity = 0.7;
 
     // Button definitions
-    const jumpButton = { x: canvas.width / 2 - 50, y: canvas.height - 80, width: 100, height: 50 };
+    const jumpButton = { x: canvas.width / 2 - 60, y: canvas.height - 80, width: 120, height: 60 };
     const restartButton = { x: canvas.width / 2 - 50, y: canvas.height / 2 + 120, width: 100, height: 50, text: 'Restart' };
     const homeButton = { x: canvas.width / 2 - 50, y: canvas.height / 2 + 180, width: 100, height: 50, text: 'Home' };
     const plusButton = { x: canvas.width / 2 - 25, y: 350, width: 50, height: 50, text: '+' };
@@ -246,13 +244,13 @@
       const rect = canvas.getBoundingClientRect();
       const scaleX = rect.width / canvas.width;
       const scaleY = rect.height / canvas.height;
-      const fieldWidth = 240;
-      const fieldHeight = 50;
+      const fieldWidth = 200;
+      const fieldHeight = 40;
 
       // Login input positions
-      const loginUsernameX = canvas.width / 2 - 120;
+      const loginUsernameX = canvas.width / 2 - 100;
       const loginUsernameY = 200;
-      const loginPasswordX = canvas.width / 2 - 120;
+      const loginPasswordX = canvas.width / 2 - 100;
       const loginPasswordY = 280;
 
       usernameInput.style.left = `${rect.left + loginUsernameX * scaleX}px`;
@@ -266,9 +264,9 @@
       passwordInput.style.height = `${fieldHeight * scaleY}px`;
 
       // Register input positions
-      const registerUsernameX = canvas.width / 2 - 120;
+      const registerUsernameX = canvas.width / 2 - 100;
       const registerUsernameY = 200;
-      const registerPasswordX = canvas.width / 2 - 120;
+      const registerPasswordX = canvas.width / 2 - 100;
       const registerPasswordY = 280;
 
       registerUsernameInput.style.left = `${rect.left + registerUsernameX * scaleX}px`;
@@ -282,11 +280,11 @@
       registerPasswordInput.style.height = `${fieldHeight * scaleY}px`;
 
       // Withdraw input positions
-      const withdrawCoinsX = canvas.width / 2 - 120;
+      const withdrawCoinsX = canvas.width / 2 - 100;
       const withdrawCoinsY = 200;
-      const withdrawBankX = canvas.width / 2 - 120;
+      const withdrawBankX = canvas.width / 2 - 100;
       const withdrawBankY = 280;
-      const withdrawIFSCX = canvas.width / 2 - 120;
+      const withdrawIFSCX = canvas.width / 2 - 100;
       const withdrawIFSCY = 360;
 
       withdrawCoinsInput.style.left = `${rect.left + withdrawCoinsX * scaleX}px`;
@@ -715,14 +713,14 @@
       try {
         drawGridBackground();
         drawNeonText('Flappy Bird', canvas.width / 2, 100, 32);
-        const usernameBox = { x: canvas.width / 2 - 120, y: 200, width: 240, height: 50 };
+        const usernameBox = { x: canvas.width / 2 - 100, y: 200, width: 200, height: 40 };
         ctx.fillStyle = '#FFFFFF';
         ctx.fillRect(usernameBox.x, usernameBox.y, usernameBox.width, usernameBox.height);
         ctx.strokeStyle = '#00FFFF';
         ctx.lineWidth = 2;
         ctx.strokeRect(usernameBox.x, usernameBox.y, usernameBox.width, usernameBox.height);
 
-        const passwordBox = { x: canvas.width / 2 - 120, y: 280, width: 240, height: 50 };
+        const passwordBox = { x: canvas.width / 2 - 100, y: 280, width: 200, height: 40 };
         ctx.fillStyle = '#FFFFFF';
         ctx.fillRect(passwordBox.x, passwordBox.y, passwordBox.width, passwordBox.height);
         ctx.strokeStyle = '#00FFFF';
@@ -744,14 +742,14 @@
       try {
         drawGridBackground();
         drawNeonText('Flappy Bird', canvas.width / 2, 100, 32);
-        const usernameBox = { x: canvas.width / 2 - 120, y: 200, width: 240, height: 50 };
+        const usernameBox = { x: canvas.width / 2 - 100, y: 200, width: 200, height: 40 };
         ctx.fillStyle = '#FFFFFF';
         ctx.fillRect(usernameBox.x, usernameBox.y, usernameBox.width, usernameBox.height);
         ctx.strokeStyle = '#00FFFF';
         ctx.lineWidth = 2;
         ctx.strokeRect(usernameBox.x, usernameBox.y, usernameBox.width, usernameBox.height);
 
-        const passwordBox = { x: canvas.width / 2 - 120, y: 280, width: 240, height: 50 };
+        const passwordBox = { x: canvas.width / 2 - 100, y: 280, width: 200, height: 40 };
         ctx.fillStyle = '#FFFFFF';
         ctx.fillRect(passwordBox.x, passwordBox.y, passwordBox.width, passwordBox.height);
         ctx.strokeStyle = '#00FFFF';
@@ -776,20 +774,20 @@
         drawNeonText('100 coins = 50 rupees', canvas.width / 2, 150, 12);
         drawNeonText('Enter the details carefully', canvas.width / 2, 170, 12);
 
-        const coinsBox = { x: canvas.width / 2 - 120, y: 200, width: 240, height: 50 };
+        const coinsBox = { x: canvas.width / 2 - 100, y: 200, width: 200, height: 40 };
         ctx.fillStyle = '#FFFFFF';
         ctx.fillRect(coinsBox.x, coinsBox.y, coinsBox.width, coinsBox.height);
         ctx.strokeStyle = '#00FFFF';
         ctx.lineWidth = 2;
         ctx.strokeRect(coinsBox.x, coinsBox.y, coinsBox.width, coinsBox.height);
 
-        const bankBox = { x: canvas.width / 2 - 120, y: 280, width: 240, height: 50 };
+        const bankBox = { x: canvas.width / 2 - 100, y: 280, width: 200, height: 40 };
         ctx.fillStyle = '#FFFFFF';
         ctx.fillRect(bankBox.x, bankBox.y, bankBox.width, bankBox.height);
         ctx.strokeStyle = '#00FFFF';
         ctx.strokeRect(bankBox.x, bankBox.y, bankBox.width, bankBox.height);
 
-        const ifscBox = { x: canvas.width / 2 - 120, y: 360, width: 240, height: 50 };
+        const ifscBox = { x: canvas.width / 2 - 100, y: 360, width: 200, height: 40 };
         ctx.fillStyle = '#FFFFFF';
         ctx.fillRect(ifscBox.x, ifscBox.y, ifscBox.width, ifscBox.height);
         ctx.strokeStyle = '#00FFFF';
@@ -809,8 +807,8 @@
     }
 
     function handleLoginClick(x, y) {
-      const usernameBox = { x: canvas.width / 2 - 120, y: 200, width: 240, height: 50 };
-      const passwordBox = { x: canvas.width / 2 - 120, y: 280, width: 240, height: 50 };
+      const usernameBox = { x: canvas.width / 2 - 100, y: 200, width: 200, height: 40 };
+      const passwordBox = { x: canvas.width / 2 - 100, y: 280, width: 200, height: 40 };
       const loginBtn = { x: canvas.width / 2 - 50, y: 350, width: 100, height: 40 };
       const registerBtn = { x: canvas.width / 2 - 50, y: 420, width: 100, height: 40 };
       if (x >= usernameBox.x && x <= usernameBox.x + usernameBox.width && y >= usernameBox.y && y <= usernameBox.y + usernameBox.height) {
@@ -857,8 +855,8 @@
     }
 
     function handleRegisterClick(x, y) {
-      const usernameBox = { x: canvas.width / 2 - 120, y: 200, width: 240, height: 50 };
-      const passwordBox = { x: canvas.width / 2 - 120, y: 280, width: 240, height: 50 };
+      const usernameBox = { x: canvas.width / 2 - 100, y: 200, width: 200, height: 40 };
+      const passwordBox = { x: canvas.width / 2 - 100, y: 280, width: 200, height: 40 };
       const registerBtn = { x: canvas.width / 2 - 50, y: 350, width: 100, height: 40 };
       const backBtn = { x: canvas.width / 2 - 70, y: 420, width: 140, height: 40 };
       if (x >= usernameBox.x && x <= usernameBox.x + usernameBox.width && y >= usernameBox.y && y <= usernameBox.y + usernameBox.height) {
@@ -918,9 +916,9 @@
     }
 
     function handleWithdrawClick(x, y) {
-      const coinsBox = { x: canvas.width / 2 - 120, y: 200, width: 240, height: 50 };
-      const bankBox = { x: canvas.width / 2 - 120, y: 280, width: 240, height: 50 };
-      const ifscBox = { x: canvas.width / 2 - 120, y: 360, width: 240, height: 50 };
+      const coinsBox = { x: canvas.width / 2 - 100, y: 200, width: 200, height: 40 };
+      const bankBox = { x: canvas.width / 2 - 100, y: 280, width: 200, height: 40 };
+      const ifscBox = { x: canvas.width / 2 - 100, y: 360, width: 200, height: 40 };
       const submitBtn = { x: canvas.width / 2 - 50, y: 420, width: 100, height: 40 };
       const backBtn = { x: canvas.width / 2 - 50, y: 490, width: 100, height: 40 };
       if (x >= coinsBox.x && x <= coinsBox.x + coinsBox.width && y >= coinsBox.y && y <= coinsBox.y + coinsBox.height) {
@@ -1006,13 +1004,13 @@
       const centerX = jumpButton.x + jumpButton.width / 2;
       const centerY = jumpButton.y + jumpButton.height / 2;
       ctx.fillStyle = '#FF69B4';
-      ctx.fillRect(centerX - 30, centerY - 7, 60, 14);
+      ctx.fillRect(centerX - 36, centerY - 8, 72, 16);
       ctx.fillStyle = '#00FFFF';
-      ctx.fillRect(centerX - 30, centerY - 7, 60, 2);
-      ctx.fillRect(centerX - 30, centerY - 7, 2, 14);
+      ctx.fillRect(centerX - 36, centerY - 8, 72, 2);
+      ctx.fillRect(centerX - 36, centerY - 8, 2, 16);
       ctx.fillStyle = '#003333';
-      ctx.fillRect(centerX - 30, centerY + 5, 60, 2);
-      ctx.fillRect(centerX + 28, centerY - 7, 2, 14);
+      ctx.fillRect(centerX - 36, centerY + 6, 72, 2);
+      ctx.fillRect(centerX + 34, centerY - 8, 2, 16);
     }
 
     function drawRestartButton() {
