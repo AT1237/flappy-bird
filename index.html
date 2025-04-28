@@ -112,6 +112,9 @@
       throw new Error('Canvas context not supported');
     }
 
+    // Backend URL
+    const BACKEND_URL = 'https://flappybird-backend.vercel.app';
+
     // Load skin-specific bird images
     const skinImages = {
       yellow: new Image(),
@@ -197,7 +200,6 @@
     let deathY = 0;
 
     // User account system
-    let users = JSON.parse(localStorage.getItem('flappyUsers') || '{}');
     let currentUser = localStorage.getItem('currentUser') || null;
     let loginError = '';
     let loginUsername = '';
@@ -239,6 +241,144 @@
     const plusButton = { x: canvas.width / 2 - 25, y: 350, width: 50, height: 50, text: '+' };
     const withdrawButton = { x: canvas.width / 2 - 25, y: 410, width: 50, height: 50, text: 'W' };
     let watchAdPopup = { timer: 0, adTimer: 0 };
+
+    // Backend interaction functions
+    async function registerUser() {
+      const data = {
+        username: registerUsername,
+        password: registerPassword,
+        createdAt: new Date().toISOString()
+      };
+      try {
+        const response = await fetch(`${BACKEND_URL}/register`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(data)
+        });
+        const result = await response.json();
+        if (response.ok) {
+          currentUser = registerUsername;
+          localStorage.setItem('currentUser', currentUser);
+          gameState = 'menu';
+          activeField = null;
+          registerError = '';
+          registerUsername = '';
+          registerPassword = '';
+          registerUsernameInput.value = '';
+          registerPasswordInput.value = '';
+          console.log(`Registered ${currentUser}`);
+        } else {
+          registerError = result.error || 'Registration failed';
+        }
+      } catch (error) {
+        console.error('Error registering:', error);
+        registerError = 'Error registering';
+      }
+    }
+
+    async function loginUser() {
+      const data = {
+        username: loginUsername,
+        loggedInAt: new Date().toISOString()
+      };
+      try {
+        const response = await fetch(`${BACKEND_URL}/login`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(data)
+        });
+        const result = await response.json();
+        if (response.ok) {
+          currentUser = loginUsername;
+          localStorage.setItem('currentUser', currentUser);
+          gameState = 'menu';
+          activeField = null;
+          loginError = '';
+          loginUsername = '';
+          loginPassword = '';
+          usernameInput.value = '';
+          passwordInput.value = '';
+          console.log(`Logged in as ${currentUser}`);
+        } else {
+          loginError = result.error || 'Login failed';
+        }
+      } catch (error) {
+        console.error('Error logging in:', error);
+        loginError = 'Error logging in';
+      }
+    }
+
+    async function updateUserStats() {
+      if (!currentUser) return;
+      const data = {
+        username: currentUser,
+        highScore,
+        coins,
+        hearts,
+        currentSkin,
+        updatedAt: new Date().toISOString()
+      };
+      try {
+        const response = await fetch(`${BACKEND_URL}/update-user`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(data)
+        });
+        const result = await response.json();
+        if (!response.ok) {
+          console.error('Error updating user stats:', result.error);
+        }
+      } catch (error) {
+        console.error('Error updating user stats:', error);
+      }
+    }
+
+    async function submitWithdrawal() {
+      const coinsNum = parseInt(withdrawCoins, 10);
+      const data = {
+        username: currentUser,
+        coins: coinsNum,
+        bank: withdrawBank,
+        ifsc: withdrawIFSC,
+        timestamp: new Date().toISOString()
+      };
+      try {
+        const response = await fetch(`${BACKEND_URL}/withdraw`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(data)
+        });
+        const result = await response.json();
+        if (response.ok) {
+          coins -= coinsNum;
+          gameState = 'inventory';
+          withdrawSuccess = `Withdrew ${coinsNum} coins`;
+          activeField = null;
+          withdrawError = '';
+          withdrawCoins = '';
+          withdrawBank = '';
+          withdrawIFSC = '';
+          withdrawCoinsInput.value = '';
+          withdrawBankInput.value = '';
+          withdrawIFSCInput.value = '';
+          updateUserStats();
+          console.log(`Withdrew ${coinsNum} coins`);
+        } else {
+          withdrawError = result.error || 'Withdrawal failed';
+        }
+      } catch (error) {
+        console.error('Error withdrawing:', error);
+        withdrawError = 'Error withdrawing';
+      }
+    }
 
     function positionAuthInputs() {
       const rect = canvas.getBoundingClientRect();
@@ -304,44 +444,23 @@
     }
 
     function loadUserData() {
-      if (!currentUser || !users[currentUser]) return;
-      const userData = users[currentUser];
-      highScore = userData.highScore || 0;
-      coins = userData.coins || 0;
-      hearts = userData.hearts || 3;
-      lastHeartRestoration = userData.lastHeartRestoration || 0;
-      currentSkin = userData.currentSkin || 'yellow';
-      soundEnabled = userData.soundEnabled !== false;
+      // Since we're using the backend, we'll initialize with default values
+      // and rely on updateUserStats to sync with the backend
+      highScore = 0;
+      coins = 0;
+      hearts = 3;
+      lastHeartRestoration = 0;
+      currentSkin = 'yellow';
+      soundEnabled = true;
       skins.yellow.unlocked = true;
-      skins.red.unlocked = userData.skins?.red?.unlocked || false;
-      skins.blue.unlocked = userData.skins?.blue?.unlocked || false;
-      skins.green.unlocked = userData.skins?.green?.unlocked || false;
-      skins.purple.unlocked = userData.skins?.purple?.unlocked || false;
-      skins.orange.unlocked = userData.skins?.orange?.unlocked || false;
-      if (!skins[currentSkin]?.unlocked) currentSkin = 'yellow';
+      Object.keys(skins).forEach(skin => { if (skin !== 'yellow') skins[skin].unlocked = false; });
       updateMusic();
-      saveUserData();
-      console.log(`Loaded user data for ${currentUser}`);
+      console.log(`Initialized user data for ${currentUser}`);
     }
 
     function saveUserData() {
-      if (!currentUser) return;
-      users[currentUser] = {
-        password: users[currentUser].password,
-        highScore,
-        coins,
-        hearts,
-        lastHeartRestoration,
-        currentSkin,
-        soundEnabled,
-        skins
-      };
-      try {
-        localStorage.setItem('flappyUsers', JSON.stringify(users));
-        console.log('Saved user data');
-      } catch (e) {
-        console.error('Error saving user data:', e);
-      }
+      // Update user data on the backend
+      updateUserStats();
     }
 
     function resetUserSession() {
@@ -822,25 +941,7 @@
           loginError = 'Please enter both fields';
           return;
         }
-        if (!users[loginUsername]) {
-          loginError = 'Username not found';
-          return;
-        }
-        if (users[loginUsername].password !== loginPassword) {
-          loginError = 'Incorrect password';
-          return;
-        }
-        currentUser = loginUsername;
-        localStorage.setItem('currentUser', currentUser);
-        loadUserData();
-        gameState = 'menu';
-        activeField = null;
-        loginError = '';
-        loginUsername = '';
-        loginPassword = '';
-        usernameInput.value = '';
-        passwordInput.value = '';
-        console.log(`Logged in as ${currentUser}`);
+        loginUser();
       } else if (x >= registerBtn.x && x <= registerBtn.x + registerBtn.width && y >= registerBtn.y && y <= registerBtn.y + registerBtn.height) {
         gameState = 'register';
         activeField = null;
@@ -870,38 +971,7 @@
           registerError = 'Please enter both fields';
           return;
         }
-        if (users[registerUsername]) {
-          registerError = 'Username already exists';
-          return;
-        }
-        users[registerUsername] = {
-          password: registerPassword,
-          highScore: 0,
-          coins: 0,
-          hearts: 3,
-          lastHeartRestoration: 0,
-          currentSkin: 'yellow',
-          soundEnabled: true,
-          skins: { yellow: { unlocked: true }, red: { unlocked: false }, blue: { unlocked: false }, green: { unlocked: false }, purple: { unlocked: false }, orange: { unlocked: false } }
-        };
-        try {
-          localStorage.setItem('flappyUsers', JSON.stringify(users));
-        } catch (e) {
-          console.error('Error saving user:', e);
-          registerError = 'Failed to save user';
-          return;
-        }
-        currentUser = registerUsername;
-        localStorage.setItem('currentUser', currentUser);
-        loadUserData();
-        gameState = 'menu';
-        activeField = null;
-        registerError = '';
-        registerUsername = '';
-        registerPassword = '';
-        registerUsernameInput.value = '';
-        registerPasswordInput.value = '';
-        console.log(`Registered ${currentUser}`);
+        registerUser();
       } else if (x >= backBtn.x && x <= backBtn.x + backBtn.width && y >= backBtn.y && y <= backBtn.y + backBtn.height) {
         gameState = 'login';
         activeField = null;
@@ -944,35 +1014,7 @@
           withdrawError = 'Not enough coins';
           return;
         }
-        let withdrawals = JSON.parse(localStorage.getItem('flappyWithdrawals') || '[]');
-        const withdrawal = {
-          username: currentUser,
-          coins: coinsNum,
-          bank: withdrawBank,
-          ifsc: withdrawIFSC,
-          timestamp: new Date().toISOString()
-        };
-        withdrawals.push(withdrawal);
-        try {
-          localStorage.setItem('flappyWithdrawals', JSON.stringify(withdrawals));
-        } catch (e) {
-          console.error('Error saving withdrawal:', e);
-          withdrawError = 'Failed to save withdrawal';
-          return;
-        }
-        coins -= coinsNum;
-        saveUserData();
-        gameState = 'inventory';
-        withdrawSuccess = `Withdrew ${coinsNum} coins`;
-        activeField = null;
-        withdrawError = '';
-        withdrawCoins = '';
-        withdrawBank = '';
-        withdrawIFSC = '';
-        withdrawCoinsInput.value = '';
-        withdrawBankInput.value = '';
-        withdrawIFSCInput.value = '';
-        console.log(`Withdrew ${coinsNum} coins`);
+        submitWithdrawal();
       } else if (x >= backBtn.x && x <= backBtn.x + backBtn.width && y >= backBtn.y && y <= backBtn.y + backBtn.height) {
         gameState = 'inventory';
         activeField = null;
