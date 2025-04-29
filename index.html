@@ -47,13 +47,13 @@
       text-align: center;
     }
     #usernameInput, #passwordInput, #registerUsernameInput, #registerPasswordInput {
-      color: #000000; /* Black text for entered username and password */
+      color: #000000;
     }
     #withdrawCoinsInput, #withdrawBankInput, #withdrawIFSCInput {
-      color: #FFFF00; /* Keep yellow text for withdraw inputs */
+      color: #FFFF00;
     }
     #withdrawCoinsInput {
-      font-size: 10px; /* Smaller font for 'Coins (Min 100)' placeholder */
+      font-size: 10px;
     }
     #usernameInput::placeholder, #passwordInput::placeholder,
     #registerUsernameInput::placeholder, #registerPasswordInput::placeholder,
@@ -261,6 +261,15 @@
         if (response.ok) {
           currentUser = registerUsername;
           localStorage.setItem('currentUser', currentUser);
+          // Initialize user data
+          highScore = 0;
+          coins = 0;
+          hearts = 3;
+          currentSkin = 'yellow';
+          soundEnabled = true;
+          skins.yellow.unlocked = true;
+          Object.keys(skins).forEach(skin => { if (skin !== 'yellow') skins[skin].unlocked = false; });
+          await updateUserStats();
           gameState = 'menu';
           activeField = null;
           registerError = '';
@@ -268,6 +277,7 @@
           registerPassword = '';
           registerUsernameInput.value = '';
           registerPasswordInput.value = '';
+          alert('Registered successfully! Initial stats: High Score: 0, Coins: 0');
           console.log(`Registered ${currentUser}`);
         } else {
           registerError = result.error || 'Registration failed';
@@ -295,20 +305,37 @@
         if (response.ok) {
           currentUser = loginUsername;
           localStorage.setItem('currentUser', currentUser);
-          gameState = 'menu';
-          activeField = null;
-          loginError = '';
-          loginUsername = '';
-          loginPassword = '';
-          usernameInput.value = '';
-          passwordInput.value = '';
-          console.log(`Logged in as ${currentUser}`);
+          // Fetch user data from backend
+          const userDataResponse = await fetch(`${BACKEND_URL}/points/${currentUser}`);
+          const userData = await userDataResponse.json();
+          if (userDataResponse.ok) {
+            highScore = userData.highScore || 0;
+            coins = userData.coins || 0;
+            hearts = userData.hearts || 3;
+            currentSkin = userData.currentSkin || 'yellow';
+            soundEnabled = true; // Not stored in backend, default to true
+            // Update skins based on backend data (for now, we'll assume yellow is always unlocked)
+            skins.yellow.unlocked = true;
+            Object.keys(skins).forEach(skin => { if (skin !== 'yellow') skins[skin].unlocked = false; });
+            gameState = 'menu';
+            activeField = null;
+            loginError = '';
+            loginUsername = '';
+            loginPassword = '';
+            usernameInput.value = '';
+            passwordInput.value = '';
+            alert(`Login successful! Fetched stats: High Score: ${highScore}, Coins: ${coins}, Hearts: ${hearts}`);
+            console.log(`Logged in as ${currentUser}`);
+          } else {
+            loginError = 'Failed to fetch user data';
+          }
         } else {
           loginError = result.error || 'Login failed';
         }
       } catch (error) {
         console.error('Error logging in:', error);
         loginError = 'Error logging in';
+        alert('Error logging in: ' + error.message);
       }
     }
 
@@ -323,6 +350,7 @@
         updatedAt: new Date().toISOString()
       };
       try {
+        alert(`Sending update to backend: High Score: ${highScore}, Coins: ${coins}, Hearts: ${hearts}`);
         const response = await fetch(`${BACKEND_URL}/update-user`, {
           method: 'POST',
           headers: {
@@ -331,11 +359,15 @@
           body: JSON.stringify(data)
         });
         const result = await response.json();
-        if (!response.ok) {
+        if (response.ok) {
+          alert('User stats updated successfully on backend');
+        } else {
           console.error('Error updating user stats:', result.error);
+          alert('Failed to update user stats: ' + (result.error || 'Unknown error'));
         }
       } catch (error) {
         console.error('Error updating user stats:', error);
+        alert('Error updating user stats: ' + error.message);
       }
     }
 
@@ -369,7 +401,7 @@
           withdrawCoinsInput.value = '';
           withdrawBankInput.value = '';
           withdrawIFSCInput.value = '';
-          updateUserStats();
+          await updateUserStats();
           console.log(`Withdrew ${coinsNum} coins`);
         } else {
           withdrawError = result.error || 'Withdrawal failed';
@@ -444,17 +476,7 @@
     }
 
     function loadUserData() {
-      // Since we're using the backend, we'll initialize with default values
-      // and rely on updateUserStats to sync with the backend
-      highScore = 0;
-      coins = 0;
-      hearts = 3;
-      lastHeartRestoration = 0;
-      currentSkin = 'yellow';
-      soundEnabled = true;
-      skins.yellow.unlocked = true;
-      Object.keys(skins).forEach(skin => { if (skin !== 'yellow') skins[skin].unlocked = false; });
-      updateMusic();
+      // Now handled in loginUser after fetching from backend
       console.log(`Initialized user data for ${currentUser}`);
     }
 
